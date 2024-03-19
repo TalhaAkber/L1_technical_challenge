@@ -42,7 +42,7 @@ class ProcessLogCommand extends Command
     {
         $this
             ->setDescription('Process log file')
-            ->addArgument('chunkSize', InputArgument::OPTIONAL, 'Chunk size in bytes', 200)
+            ->addArgument('chunkSize', InputArgument::OPTIONAL, 'Chunk size in bytes', 1024)
             ->addArgument('from', InputArgument::OPTIONAL, 'Starting file pointer', 0);
     }
 
