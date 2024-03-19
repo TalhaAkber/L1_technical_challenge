@@ -29,6 +29,7 @@ To set up the project, follow these steps:
 
 ## Configuration
 
+- **LogFile:**  The sample log file is inside `/var/log/logs.log`. Thats provided in the actual technical challenge. Feel free to replace it with the one you wanted to test it.
 - **Chunk Size:** The size of the chunks used to process the log file can be adjusted according to your requirements. You can modify the chunk size from the `job.sh` file by changing the value (`1024` by default) to your preferred size.
     ***Note***: Wanted to do it in env but something crazy was happening in local and docker soooo ¯\\\_(ツ)_/¯.
 
