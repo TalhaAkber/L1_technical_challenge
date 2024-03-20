@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Entity\FileReadHistory;
 use App\Entity\Log;
 use App\Repository\FileReadHistoryRepository;
+use App\Serializer\SerializerProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -13,9 +14,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\Serializer\Encoder\JsonEncoder;
-use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
 #[AsCommand(
@@ -34,7 +32,7 @@ class ProcessLogCommand extends Command
         private readonly FileReadHistoryRepository $fileReadHistoryRepository
     )
     {
-        $this->serializer = new Serializer([new ObjectNormalizer(), new DateTimeNormalizer()], [new JsonEncoder()]);
+        $this->serializer = SerializerProvider::getSerializer();
         parent::__construct();
     }
 
@@ -149,11 +147,11 @@ class ProcessLogCommand extends Command
 
             // Return the extracted data as an associative array
             return [
-                'serviceName' => $serviceName,
+                'serviceName' => trim($serviceName),
                 'timestamp' => $timestamp,
-                'httpMethod' => $httpMethod,
-                'endpoint' => $endpoint,
-                'statusCode' => $statusCode,
+                'httpMethod' => trim($httpMethod),
+                'endpoint' => trim($endpoint),
+                'statusCode' => trim($statusCode),
                 'rawData' => $rawData
             ];
         } else {
