@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Entity\FileReadHistory;
 use App\Entity\Log;
+use App\Provider\ObjectSerializer;
 use App\Repository\FileReadHistoryRepository;
 use App\Serializer\SerializerProvider;
 use Doctrine\ORM\EntityManagerInterface;
@@ -23,16 +24,15 @@ use Symfony\Component\Serializer\Serializer;
 )]
 class ProcessLogCommand extends Command
 {
-    private Serializer $serializer;
     private SymfonyStyle $logger;
 
     public function __construct(
         private readonly ParameterBagInterface     $params,
         private readonly EntityManagerInterface    $entityManager,
-        private readonly FileReadHistoryRepository $fileReadHistoryRepository
+        private readonly FileReadHistoryRepository $fileReadHistoryRepository,
+        private readonly ObjectSerializer          $serializer
     )
     {
-        $this->serializer = SerializerProvider::getSerializer();
         parent::__construct();
     }
 
@@ -112,7 +112,7 @@ class ProcessLogCommand extends Command
                 continue;
             }
             $logData = $this->parseLogLine($line);
-            $log = $this->serializer->deserialize(json_encode($logData), Log::class, 'json');
+            $log = $this->serializer->deserialize($logData, Log::class);
             $this->entityManager->persist($log);
 
             // Save state into the database after processing each chunk
