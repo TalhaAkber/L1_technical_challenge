@@ -22,6 +22,9 @@ COPY . .
 # Install Symfony CLI
 RUN curl -sS https://get.symfony.com/cli/installer | bash && mv /root/.symfony5/bin/symfony /usr/local/bin/symfony
 
+# Install compose packages
+RUN composer install --no-scripts --no-autoloader
+
 # Add cron job
 RUN touch /var/log/symfony.log
 RUN chmod 0666 /var/log/symfony.log
