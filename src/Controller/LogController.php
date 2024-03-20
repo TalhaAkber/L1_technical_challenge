@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Request\CountRequest;
+use App\Serializer\SerializerProvider;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use App\Response\CountResponse;
@@ -10,12 +12,17 @@ use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class LogController extends AbstractController
 {
+    private readonly Serializer $serializer;
     public function __construct(
-        private readonly LogService $logService
+        private readonly LogService $logService,
+        private readonly ValidatorInterface $validator
     ) {
+        $this->serializer = SerializerProvider::getSerializer();
     }
 
     #[Route('/count', name: 'count_logs', methods: ['GET'])]
@@ -68,10 +75,25 @@ class LogController extends AbstractController
     )]
     public function index(Request $request): JsonResponse
     {
-        $serviceNames = $request->query->all()['serviceNames'];
-        $startDate = $request->query->get('startDate') ? new \DateTime($request->query->get('startDate')) : null;
-        $endDate = $request->query->get('endDate') ? new \DateTime($request->query->get('endDate')) : null;
-        $statusCode = $request->query->get('statusCode');
+        $requestData = $request->query->all();
+        $request = $this->serializer->deserialize(json_encode($requestData), CountRequest::class, 'json');
+        $errors = $this->validator->validate($request);
+
+        if (count($errors) > 0) {
+            /*
+             * Uses a __toString method on the $errors variable which is a
+             * ConstraintViolationList object. This gives us a nice string
+             * for debugging.
+             */
+            $errorsString = (string) $errors;
+
+            return new JsonResponse($errorsString, 400);
+        }
+
+        $serviceNames = $request->getServiceNames();
+        $startDate = $request->getStartDate();
+        $endDate = $request->getEndDate();
+        $statusCode = $request->getStatusCode();
 
         $countResponse = $this->logService->count((array)$serviceNames, $startDate, $endDate, $statusCode);
         return new JsonResponse($countResponse);
