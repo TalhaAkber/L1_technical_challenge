@@ -46,7 +46,7 @@ RUN echo "* * * * * /usr/local/bin/php /var/www/html/bin/console app:process-log
 Replace the cron schedule expression (`* * * * *`) with your desired schedule and Viola!.
 ## Usage
 
-To process the log file, we have this command that runs via cron service:
+To process the log file, we have this command inside `job.sh` in the root directory. This should triggered automatically via cron service:
 ```
 php /var/www/html/bin/console app:process-log 1024
 ```
