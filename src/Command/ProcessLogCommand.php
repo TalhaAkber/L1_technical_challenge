@@ -41,7 +41,8 @@ class ProcessLogCommand extends Command
         $this
             ->setDescription('Process log file')
             ->addArgument('chunkSize', InputArgument::OPTIONAL, 'Chunk size in bytes', 1024)
-            ->addArgument('from', InputArgument::OPTIONAL, 'Starting file pointer', 0);
+            ->addArgument('from', InputArgument::OPTIONAL, 'Starting file pointer', 0)
+            ->addArgument('filePath', InputArgument::OPTIONAL, 'Log file path', '/var/log/logs.log');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -49,21 +50,21 @@ class ProcessLogCommand extends Command
         $this->logger = new SymfonyStyle($input, $output);
         $this->logger->note('Initialize ProcessLogCommand');
 
-        $logFilePath = $this->params->get('kernel.project_dir') . '/var/log/logs.log';
+        $logFilePath = $this->params->get('kernel.project_dir') . $input->getArgument('filePath');
         $chunkSize = $input->getArgument('chunkSize');
         $from = $input->getArgument('from');
         $handle = fopen($logFilePath, 'r');
         $filesize = filesize($logFilePath);
 
         if ($from === 0) {
-            $this->logger->note("initial pointer is not set, try getting it from database");
+            $this->logger->info("initial pointer is not set, try getting it from database");
             $latestHistory = $this->fileReadHistoryRepository->findLatest();
             if ($latestHistory !== null) {
                 $from = $latestHistory->getReadTill();
             }
         }
 
-        $this->logger->note(
+        $this->logger->info(
             sprintf(
                 'Start Processing logs : %s, from: %s, chunkSize: %s, total size: %s',
                 $logFilePath,
@@ -75,20 +76,15 @@ class ProcessLogCommand extends Command
 
         if ($handle) {
             while (!feof($handle)) {
-
                 // Move file pointer to the specified position
-                $this->logger->note(sprintf('seeking file upto (%s) and reading (%s) bytes', $from, $chunkSize));
+                $this->logger->info(sprintf('seeking file upto (%s) and reading (%s) bytes', $from, $chunkSize));
                 fseek($handle, $from);
                 // Read the chunk of specified size
                 $chunk = fread($handle, $chunkSize);
                 // Process the chunk here
                 $last_read_ptr = $this->processChunk($chunk);
-                $fileReadHistory = new FileReadHistory();
-                $fileReadHistory->setReadFrom($from);
-                $fileReadHistory->setReadTill($from + $last_read_ptr);
-                $fileReadHistory->setTimestamp(new \DateTime());
-                $this->entityManager->persist($fileReadHistory);
-                $this->entityManager->flush();
+                // Adding it inside FileReadHistory to restart from this point
+                $this->createFileReadHistory($from, $last_read_ptr);
                 $from += $last_read_ptr;
             }
             fclose($handle);
@@ -108,7 +104,7 @@ class ProcessLogCommand extends Command
         $buffer = mb_substr($chunk, 0, $read_till_ptr - 1);
         $lines = explode("\n", $buffer);
 
-        $this->logger->note(sprintf('Number of lines in this chunk : %s', count($lines)));
+        $this->logger->info(sprintf('Number of lines in this chunk : %s', count($lines)));
 
         foreach ($lines as $line) {
             // Skip empty lines
@@ -161,5 +157,20 @@ class ProcessLogCommand extends Command
                 '$rawData' => $line
             ];
         }
+    }
+
+    /**
+     * @param int $from
+     * @param int $last_read_ptr
+     * @return void
+     */
+    private function createFileReadHistory(int $from, int $last_read_ptr): void
+    {
+        $fileReadHistory = new FileReadHistory();
+        $fileReadHistory->setReadFrom($from);
+        $fileReadHistory->setReadTill($from + $last_read_ptr);
+        $fileReadHistory->setTimestamp(new \DateTime());
+        $this->entityManager->persist($fileReadHistory);
+        $this->entityManager->flush();
     }
 }
