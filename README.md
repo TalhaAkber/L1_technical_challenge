@@ -19,7 +19,7 @@ To set up the project, follow these steps:
 3. Build and run the project:
     ```
     docker-compose build
-    docker-compose up -d
+    docker-compose up
     ```
    This command will start the cron job and the web server.
 
@@ -54,7 +54,7 @@ Replace `1024` with your desired chunk size.
 
 If you make any changes to the configuration or codebase and they don't reflect, try rebuilding the container by executing the following command:
 ```
-docker-compose down && docker-compose build && docker-compose up -d
+docker-compose down && docker-compose build && docker-compose up
 ```
 
 ### Note:
