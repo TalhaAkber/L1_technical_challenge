@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
+use App\Provider\ObjectSerializer;
 use App\Request\CountRequest;
-use App\Serializer\SerializerProvider;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use App\Response\CountResponse;
@@ -12,17 +12,15 @@ use Nelmio\ApiDocBundle\Annotation\Model;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Attribute\Route;
 use OpenApi\Attributes as OA;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class LogController extends AbstractController
 {
-    private readonly Serializer $serializer;
     public function __construct(
         private readonly LogService $logService,
-        private readonly ValidatorInterface $validator
+        private readonly ValidatorInterface $validator,
+        private readonly ObjectSerializer $serializer
     ) {
-        $this->serializer = SerializerProvider::getSerializer();
     }
 
     #[Route('/count', name: 'count_logs', methods: ['GET'])]
@@ -76,7 +74,7 @@ class LogController extends AbstractController
     public function index(Request $request): JsonResponse
     {
         $requestData = $request->query->all();
-        $request = $this->serializer->deserialize(json_encode($requestData), CountRequest::class, 'json');
+        $request = $this->serializer->deserialize($requestData, CountRequest::class);
         $errors = $this->validator->validate($request);
 
         if (count($errors) > 0) {
