@@ -68,7 +68,7 @@ docker-compose exec app tail -f /var/log/symfony.log
 
 To run all unit tests, execute the following command:
 ```
-php bin/phpunit
+docker-compose exec app php bin/phpunit
 ```
 
 ## Support
